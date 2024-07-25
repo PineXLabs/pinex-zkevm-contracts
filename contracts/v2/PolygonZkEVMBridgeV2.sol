@@ -91,6 +91,8 @@ contract PolygonZkEVMBridgeV2 is
     // WETH address
     TokenWrapped public WETHToken;
 
+    // gasTokenDecimalsCoefficient
+    uint8 public gasTokenDecimalsCoefficient;
     /**
      * @dev Emitted when bridge assets or messages to another network
      */
@@ -168,7 +170,8 @@ contract PolygonZkEVMBridgeV2 is
             gasTokenAddress = _gasTokenAddress;
             gasTokenNetwork = _gasTokenNetwork;
             gasTokenMetadata = _gasTokenMetadata;
-
+            uint8 gasTokenDecimals = TokenWrapped(gasTokenAddress).decimals();
+            gasTokenDecimalsCoefficient = 18 / gasTokenDecimals;
             // Create a wrapped token for WETH, with salt == 0
             WETHToken = _deployWrappedToken(
                 0, // salt
@@ -502,7 +505,7 @@ contract PolygonZkEVMBridgeV2 is
             ) {
                 // Transfer gas token
                 /* solhint-disable avoid-low-level-calls */
-                (bool success, ) = destinationAddress.call{value: amount}(
+                (bool success, ) = destinationAddress.call{value: amount * gasTokenDecimalsCoefficient}(
                     new bytes(0)
                 );
                 if (!success) {
